@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import {
   ArrowTrendingUpIcon,
@@ -26,7 +26,7 @@ import type { OverviewResponse, ActivityItem as Activity } from "@/lib/types";
 
 // ---- helper types
 type RadiusType = number | [number, number, number, number];
-type ChartPoint = Record<string, string | number>; 
+type ChartPoint = Record<string, string | number>;
 
 export default function OverviewPage() {
   const [data, setData] = useState<OverviewResponse | null>(null);
@@ -59,12 +59,12 @@ export default function OverviewPage() {
   // number formatters
   const locale = display?.locale ?? "en-US";
   const currencySymbol = display?.currencySymbol ?? "$";
-  const nfInteger = useMemo(() => new Intl.NumberFormat(locale), [locale]);
+  const nfInteger = new Intl.NumberFormat(locale);
 
   const iconMap: Record<NonNullable<typeof kpis[number]["iconType"]>, ReactNode> = {
     money: <BanknotesIcon className="h-5 w-5 text-gray-400" />,
     users: <UsersIcon className="h-5 w-5 text-gray-400" />,
-    box:   <ArchiveBoxIcon className="h-5 w-5 text-gray-400" />,
+    box: <ArchiveBoxIcon className="h-5 w-5 text-gray-400" />,
   };
 
   const Delta = ({ pct }: { pct: number }) => (
@@ -89,18 +89,18 @@ export default function OverviewPage() {
   // Monthly settings
   const barGradient = monthly.style?.barGradient ?? {
     lightFrom: "#6366F1",
-    lightTo:   "#818CF8",
-    darkFrom:  "#8B5CF6",
-    darkTo:    "#6366F1",
+    lightTo: "#818CF8",
+    darkFrom: "#8B5CF6",
+    darkTo: "#6366F1",
   };
   const barRadius: RadiusType = monthly.style?.barRadius ?? [8, 8, 0, 0];
   const barSize = monthly.style?.barSize ?? 28;
   const tooltipLabel = monthly.labels?.tooltipLabel ?? "Revenue";
-  const totalLabel   = monthly.labels?.totalLabel   ?? "Total Revenue";
-  const deltaNote    = monthly.labels?.deltaNote    ?? "vs last period";
+  const totalLabel = monthly.labels?.totalLabel ?? "Total Revenue";
+  const deltaNote = monthly.labels?.deltaNote ?? "vs last period";
 
   const cFrom = isDark ? (barGradient.darkFrom ?? "#8B5CF6") : (barGradient.lightFrom ?? "#6366F1");
-  const cTo   = isDark ? (barGradient.darkTo   ?? "#6366F1") : (barGradient.lightTo   ?? "#818CF8");
+  const cTo = isDark ? (barGradient.darkTo ?? "#6366F1") : (barGradient.lightTo ?? "#818CF8");
 
   const chartData: ChartPoint[] = (monthly.series as unknown as ChartPoint[]) ?? [];
   const xKey = monthly.keys?.x ?? "month";
@@ -148,8 +148,8 @@ export default function OverviewPage() {
                 a.status === "success"
                   ? (activityStyle?.successClass ?? "text-emerald-500")
                   : a.status === "warning"
-                  ? (activityStyle?.warningClass ?? "text-amber-500")
-                  : (activityStyle?.dangerClass ?? "text-rose-500");
+                    ? (activityStyle?.warningClass ?? "text-amber-500")
+                    : (activityStyle?.dangerClass ?? "text-rose-500");
               return (
                 <div key={a.id} className="flex items-start gap-3 p-4">
                   <Icon className={`h-5 w-5 ${color}`} />
@@ -176,8 +176,8 @@ export default function OverviewPage() {
               <BarChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
                 <defs>
                   <linearGradient id="barFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%"   stopColor={cFrom} stopOpacity={0.95} />
-                    <stop offset="100%" stopColor={cTo}   stopOpacity={0.85} />
+                    <stop offset="0%" stopColor={cFrom} stopOpacity={0.95} />
+                    <stop offset="100%" stopColor={cTo} stopOpacity={0.85} />
                   </linearGradient>
                 </defs>
 
@@ -210,7 +210,7 @@ export default function OverviewPage() {
                 <Bar
                   dataKey={yKey}
                   fill="url(#barFill)"
-                  radius={barRadius} 
+                  radius={barRadius}
                   barSize={barSize}
                   animationDuration={600}
                 />
