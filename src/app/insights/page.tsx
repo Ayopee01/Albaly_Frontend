@@ -4,16 +4,28 @@ import { useEffect, useState } from "react";
 import Loading from "@/component/Loading";
 import type { InsightsResponse, FunnelStep } from "@/lib/types";
 
-function DeltaBadge({ pct, upBg, upText, downBg, downText }: {
+/* ---------- UI Bits ---------- */
+
+function DeltaBadge({
+  pct,
+  upBg,
+  upText,
+  downBg,
+  downText,
+}: {
   pct: number;
-  upBg?: string; upText?: string;
-  downBg?: string; downText?: string;
+  upBg?: string;
+  upText?: string;
+  downBg?: string;
+  downText?: string;
 }) {
   const up = pct >= 0;
-  const bg = up ? (upBg ?? "bg-emerald-50") : (downBg ?? "bg-amber-50");
-  const tx = up ? (upText ?? "text-emerald-600") : (downText ?? "text-amber-600");
+  const bg = up ? upBg ?? "bg-emerald-50" : downBg ?? "bg-amber-50";
+  const tx = up ? upText ?? "text-emerald-600" : downText ?? "text-amber-600";
   return (
-    <span className={`ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${bg} ${tx}`}>
+    <span
+      className={`ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${bg} ${tx}`}
+    >
       {up ? "↑" : "↓"} {Math.abs(pct)}%
     </span>
   );
@@ -44,7 +56,10 @@ function BarRow({
         {rightText && <span className={textClass}>{rightText}</span>}
       </div>
       <div className={`mt-2 h-2.5 rounded-full ${trackClass}`}>
-        <div className={`h-2.5 rounded-full ${colorClass}`} style={{ width: `${pct}%` }} />
+        <div
+          className={`h-2.5 rounded-full ${colorClass}`}
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   );
@@ -68,15 +83,24 @@ function FunnelRow({
   valueTextClass?: string;
 }) {
   const currentPct = Math.max(3, Math.min(100, (step.value / (max || 1)) * 100));
-  const prevPct = Math.max(0, Math.min(100, (Math.max(step.prev ?? 0, step.value) / (max || 1)) * 100));
+  const prevPct = Math.max(
+    0,
+    Math.min(100, (Math.max(step.prev ?? 0, step.value) / (max || 1)) * 100),
+  );
   return (
     <div className="mb-4">
       <div className={`mb-1 inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold ${chipClass}`}>
         {step.name}
       </div>
       <div className={`relative h-2.5 rounded-full ${trackClass}`}>
-        <div className={`absolute left-0 top-0 h-2.5 rounded-full ${prevClass}`} style={{ width: `${prevPct}%` }} />
-        <div className={`absolute left-0 top-0 h-2.5 rounded-full ${currentClass}`} style={{ width: `${currentPct}%` }} />
+        <div
+          className={`absolute left-0 top-0 h-2.5 rounded-full ${prevClass}`}
+          style={{ width: `${prevPct}%` }}
+        />
+        <div
+          className={`absolute left-0 top-0 h-2.5 rounded-full ${currentClass}`}
+          style={{ width: `${currentPct}%` }}
+        />
       </div>
       <div className={`mt-1 text-right text-xs ${valueTextClass}`}>
         {step.value.toLocaleString()}
@@ -85,7 +109,8 @@ function FunnelRow({
   );
 }
 
-/* ===== Page ===== */
+/* ---------- Page ---------- */
+
 export default function InsightsPage() {
   const [data, setData] = useState<InsightsResponse | null>(null);
 
@@ -97,12 +122,18 @@ export default function InsightsPage() {
   }, []);
 
   if (!data) {
-    return <Loading heightClass="h-40" barCount={4} barColorClass="bg-indigo-500" />;
+    return (
+      <Loading heightClass="h-40" barCount={4} barColorClass="bg-indigo-500" />
+    );
   }
 
   const pageTitle = data.pageTitle ?? "Insights";
 
-  // Top-Selling
+  // number formatter ตาม locale จาก API (fallback en-US)
+  const locale = data.display?.locale ?? "en-US";
+  const nf = new Intl.NumberFormat(locale);
+
+  /* ----- Top-Selling ----- */
   const ts = data.topSelling;
   const tsMax = Math.max(...(ts?.products ?? []).map((p) => p.value), 1);
   const currency = data.display?.currencySymbol ?? "$";
@@ -110,20 +141,21 @@ export default function InsightsPage() {
   const tsTrack = ts?.style?.trackClass ?? "bg-slate-200";
   const tsText = ts?.style?.textClass ?? "text-slate-700";
 
-  // Drop-Off
+  /* ----- Customer Drop-Off ----- */
   const cd = data.customerDropOff;
   const cdTitle = cd?.title ?? "Customer Drop-Off";
   const cdNote = cd?.note ?? "";
   const cdWeeks = cd?.weeks ?? [];
-  const cdRoseIndex = cd?.style?.highlightWeekIndex; // ให้ API ชี้สัปดาห์ที่เน้น
+  const cdRoseIndex = cd?.style?.highlightWeekIndex;
   const cdDotNormal = cd?.style?.dotColorClass ?? "bg-indigo-500";
   const cdDotHighlight = cd?.style?.dotHighlightClass ?? "bg-rose-500";
+
   const deltaUpBg = data.display?.deltaUpBg;
   const deltaUpText = data.display?.deltaUpText;
   const deltaDownBg = data.display?.deltaDownBg;
   const deltaDownText = data.display?.deltaDownText;
 
-  // Regional
+  /* ----- Regional Performance ----- */
   const rp = data.regionalPerformance;
   const rpMax = Math.max(...(rp?.regions ?? []).map((r) => r.value), 1);
   const rpTitle = rp?.title ?? "Regional Performance";
@@ -132,11 +164,14 @@ export default function InsightsPage() {
   const rpTrack = rp?.style?.trackClass ?? "bg-slate-200";
   const rpText = rp?.style?.textClass ?? "text-slate-700";
 
-  // Funnel
+  /* ----- Conversion Funnel ----- */
   const cf = data.conversionFunnel;
   const cfTitle = cf?.title ?? "Conversion Funnel";
   const cfNote = cf?.note ?? "";
-  const funnelMax = Math.max(...(cf?.steps ?? []).map((s) => Math.max(s.prev ?? 0, s.value)), 1);
+  const funnelMax = Math.max(
+    ...(cf?.steps ?? []).map((s) => Math.max(s.prev ?? 0, s.value)),
+    1,
+  );
   const cfStyle = cf?.style ?? {};
   const cfCurrent = cfStyle.currentClass ?? "bg-indigo-500";
   const cfPrev = cfStyle.prevClass ?? "bg-slate-300";
@@ -163,15 +198,17 @@ export default function InsightsPage() {
               downText={deltaDownText}
             />
           </div>
-          {ts?.note && <p className="text-sm text-slate-600 dark:text-slate-300">{ts.note}</p>}
+          {ts?.note && (
+            <p className="text-sm text-slate-600 dark:text-slate-300">{ts.note}</p>
+          )}
 
           <div className="mt-5">
-            {(ts?.products ?? []).map((p) => (
+            {(ts?.products ?? []).map((p, i) => (
               <BarRow
-                key={p.name}
+                key={`${p.name}-${i}`}
                 label={p.name}
                 value={p.value}
-                rightText={`${currency}${p.value.toLocaleString()}`}
+                rightText={`${currency}${nf.format(p.value)}`}
                 colorClass={p.colorClass ?? tsBarColor}
                 max={tsMax}
                 trackClass={tsTrack}
@@ -195,7 +232,9 @@ export default function InsightsPage() {
               downText={deltaDownText}
             />
           </div>
-          {cdNote && <p className="text-sm text-slate-600 dark:text-slate-300">{cdNote}</p>}
+          {cdNote && (
+            <p className="text-sm text-slate-600 dark:text-slate-300">{cdNote}</p>
+          )}
 
           <ul className="mt-4 space-y-2 text-sm">
             {cdWeeks.map((w, i) => (
@@ -227,16 +266,23 @@ export default function InsightsPage() {
               downText={deltaDownText}
             />
           </div>
-          {rpNote && <p className="text-sm text-slate-600 dark:text-slate-300">{rpNote}</p>}
+          {rpNote && (
+            <p className="text-sm text-slate-600 dark:text-slate-300">{rpNote}</p>
+          )}
 
           <div className="mt-5">
-            {(rp?.regions ?? []).map((r) => (
+            {(rp?.regions ?? []).map((r, i) => (
               <BarRow
-                key={r.region}
+                key={`${r.region}-${i}`}
                 label={r.region}
                 value={r.value}
-                rightText={`${currency}${r.value.toLocaleString()}`}
-                colorClass={r.colorClass ?? (r.region === rp?.style?.highlightRegion ? (rp?.style?.highlightColorClass ?? "bg-emerald-500") : rpBarColorDefault)}
+                rightText={`${currency}${nf.format(r.value)}`}
+                colorClass={
+                  r.colorClass ??
+                  (r.region === rp?.style?.highlightRegion
+                    ? rp?.style?.highlightColorClass ?? "bg-emerald-500"
+                    : rpBarColorDefault)
+                }
                 max={rpMax}
                 trackClass={rpTrack}
                 textClass={rpText}
@@ -259,12 +305,14 @@ export default function InsightsPage() {
               downText={deltaDownText}
             />
           </div>
-          {cfNote && <p className="text-sm text-slate-600 dark:text-slate-300">{cfNote}</p>}
+          {cfNote && (
+            <p className="text-sm text-slate-600 dark:text-slate-300">{cfNote}</p>
+          )}
 
           <div className="mt-5">
-            {(cf?.steps ?? []).map((s) => (
+            {(cf?.steps ?? []).map((s, i) => (
               <FunnelRow
-                key={s.name}
+                key={`${s.name}-${i}`}
                 step={s}
                 max={funnelMax}
                 currentClass={s.currentClass ?? cfCurrent}
