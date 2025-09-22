@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   ArrowTrendingUpIcon,
@@ -24,6 +24,10 @@ import {
 import Loading from "@/component/Loading";
 import type { OverviewResponse, ActivityItem as Activity } from "@/lib/types";
 
+// ---- helper types
+type RadiusType = number | [number, number, number, number];
+type ChartPoint = Record<string, string | number>; 
+
 export default function OverviewPage() {
   const [data, setData] = useState<OverviewResponse | null>(null);
   const [isDark, setIsDark] = useState(false);
@@ -40,17 +44,30 @@ export default function OverviewPage() {
     return <Loading heightClass="h-40" barCount={4} barColorClass="bg-indigo-500" />;
   }
 
-  const pageTitle = data.pageTitle ?? "Overview";
-  const pageSubtitle = data.subtitle ?? "";
+  const {
+    pageTitle = "Overview",
+    subtitle = "",
+    kpis,
+    kpiDeltaNote,
+    activityTitle = "Recent Activity",
+    activityStyle,
+    activity,
+    display,
+    monthly,
+  } = data;
 
-  const kpis = data.kpis ?? [];
-  const iconMap: Record<string, ReactNode> = {
+  // number formatters
+  const locale = display?.locale ?? "en-US";
+  const currencySymbol = display?.currencySymbol ?? "$";
+  const nfInteger = useMemo(() => new Intl.NumberFormat(locale), [locale]);
+
+  const iconMap: Record<NonNullable<typeof kpis[number]["iconType"]>, ReactNode> = {
     money: <BanknotesIcon className="h-5 w-5 text-gray-400" />,
     users: <UsersIcon className="h-5 w-5 text-gray-400" />,
-    box: <ArchiveBoxIcon className="h-5 w-5 text-gray-400" />,
+    box:   <ArchiveBoxIcon className="h-5 w-5 text-gray-400" />,
   };
 
-  const Delta = ({ pct, textGood, textBad }: { pct: number; textGood?: string; textBad?: string }) => (
+  const Delta = ({ pct }: { pct: number }) => (
     <span className="inline-flex items-center gap-1 text-sm">
       {pct >= 0 ? (
         <ArrowTrendingUpIcon className="h-4 w-4 text-emerald-500" />
@@ -61,53 +78,54 @@ export default function OverviewPage() {
         {pct >= 0 ? "+" : ""}
         {Math.abs(pct)}%
       </span>
-      {data.kpiDeltaNote && (
+      {kpiDeltaNote && (
         <span className="text-gray-500 dark:text-gray-400">
-          {pct >= 0 ? (textGood ?? data.kpiDeltaNote.good) : (textBad ?? data.kpiDeltaNote.bad)}
+          {pct >= 0 ? kpiDeltaNote.good ?? "vs last period" : kpiDeltaNote.bad ?? "vs last period"}
         </span>
       )}
     </span>
   );
 
-  const activities = data.activity ?? [];
-  const currency = data.display?.currencySymbol ?? "$";
-  const monthly = data.monthly;
-  const barGradient = monthly?.style?.barGradient ?? {
+  // Monthly settings
+  const barGradient = monthly.style?.barGradient ?? {
     lightFrom: "#6366F1",
-    lightTo: "#818CF8",
-    darkFrom: "#8B5CF6",
-    darkTo: "#6366F1",
+    lightTo:   "#818CF8",
+    darkFrom:  "#8B5CF6",
+    darkTo:    "#6366F1",
   };
-  const barRadius = monthly?.style?.barRadius ?? [8, 8, 0, 0];
-  const barSize = monthly?.style?.barSize ?? 28;
-  const tooltipLabel = monthly?.labels?.tooltipLabel ?? "Revenue";
-  const totalLabel = monthly?.labels?.totalLabel ?? "Total Revenue";
-  const deltaNote = monthly?.labels?.deltaNote ?? "vs last period";
+  const barRadius: RadiusType = monthly.style?.barRadius ?? [8, 8, 0, 0];
+  const barSize = monthly.style?.barSize ?? 28;
+  const tooltipLabel = monthly.labels?.tooltipLabel ?? "Revenue";
+  const totalLabel   = monthly.labels?.totalLabel   ?? "Total Revenue";
+  const deltaNote    = monthly.labels?.deltaNote    ?? "vs last period";
 
-  // ช่วยเลือกสีตามโหมด
   const cFrom = isDark ? (barGradient.darkFrom ?? "#8B5CF6") : (barGradient.lightFrom ?? "#6366F1");
-  const cTo = isDark ? (barGradient.darkTo ?? "#6366F1") : (barGradient.lightTo ?? "#818CF8");
+  const cTo   = isDark ? (barGradient.darkTo   ?? "#6366F1") : (barGradient.lightTo   ?? "#818CF8");
+
+  const chartData: ChartPoint[] = (monthly.series as unknown as ChartPoint[]) ?? [];
+  const xKey = monthly.keys?.x ?? "month";
+  const yKey = monthly.keys?.y ?? "value";
 
   return (
     <section className="mx-auto max-w-7xl">
       <h1 className="text-2xl font-semibold tracking-tight">{pageTitle}</h1>
-      {pageSubtitle && (
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{pageSubtitle}</p>
-      )}
+      {subtitle && <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>}
 
       {/* KPI Summary */}
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-        {kpis.map((kpi) => (
+        {kpis.map((kpi, idx) => (
           <div
-            key={kpi.label}
+            key={`${kpi.label}-${idx}`}
             className="rounded-lg border border-black/10 p-5 shadow-sm bg-white dark:bg-neutral-900 dark:border-white/10 transition"
           >
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-500 dark:text-gray-400">{kpi.label}</div>
-              {iconMap[kpi.iconType ?? ""] ?? null}
+              {kpi.iconType ? iconMap[kpi.iconType] : null}
             </div>
             <div className="mt-2 text-2xl font-semibold">
-              {kpi.isCurrency ? `${currency}${kpi.value.toLocaleString()}` : kpi.value.toLocaleString()}
+              {kpi.isCurrency
+                ? `${currencySymbol}${nfInteger.format(kpi.value)}`
+                : nfInteger.format(kpi.value)}
             </div>
             <div className="mt-2">
               <Delta pct={kpi.deltaPct} />
@@ -121,26 +139,23 @@ export default function OverviewPage() {
         {/* Recent Activity */}
         <div className="rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900">
           <div className="p-5">
-            <h2 className="text-lg font-semibold">{data.activityTitle ?? "Recent Activity"}</h2>
+            <h2 className="text-lg font-semibold">{activityTitle}</h2>
           </div>
           <div className="divide-y divide-black/10 dark:divide-white/10">
-            {activities.map((a: Activity) => {
-              const Icon =
-                a.status === "success" ? CheckCircleIcon : ExclamationTriangleIcon;
+            {activity.map((a: Activity) => {
+              const Icon = a.status === "success" ? CheckCircleIcon : ExclamationTriangleIcon;
               const color =
                 a.status === "success"
-                  ? (data.activityStyle?.successClass ?? "text-emerald-500")
+                  ? (activityStyle?.successClass ?? "text-emerald-500")
                   : a.status === "warning"
-                    ? (data.activityStyle?.warningClass ?? "text-amber-500")
-                    : (data.activityStyle?.dangerClass ?? "text-rose-500");
+                  ? (activityStyle?.warningClass ?? "text-amber-500")
+                  : (activityStyle?.dangerClass ?? "text-rose-500");
               return (
                 <div key={a.id} className="flex items-start gap-3 p-4">
                   <Icon className={`h-5 w-5 ${color}`} />
                   <div className="flex-1">
                     <div className="font-medium">{a.title}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-300">
-                      {a.description}
-                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-300">{a.description}</div>
                     <div className="mt-1 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                       <ClockIcon className="h-4 w-4" />
                       <span>{a.timeAgo}</span>
@@ -154,27 +169,27 @@ export default function OverviewPage() {
 
         {/* Monthly Performance */}
         <div className="rounded-lg border border-black/10 dark:border-white/10 p-5 bg-white dark:bg-neutral-900">
-          <h2 className="text-lg font-semibold">{monthly?.title ?? "Monthly Performance"}</h2>
+          <h2 className="text-lg font-semibold">{monthly.title ?? "Monthly Performance"}</h2>
 
           <div className="mt-4 h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthly?.series ?? []} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+              <BarChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
                 <defs>
                   <linearGradient id="barFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={cFrom} stopOpacity={0.95} />
-                    <stop offset="100%" stopColor={cTo} stopOpacity={0.85} />
+                    <stop offset="0%"   stopColor={cFrom} stopOpacity={0.95} />
+                    <stop offset="100%" stopColor={cTo}   stopOpacity={0.85} />
                   </linearGradient>
                 </defs>
 
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={"rgba(0,0,0,0.10)"} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.10)" />
                 <XAxis
-                  dataKey={monthly?.keys?.x ?? "month"}
+                  dataKey={xKey}
                   tick={{ fill: "#6B7280", fontSize: 12 }}
                   axisLine={{ stroke: "rgba(0,0,0,0.10)" }}
                   tickLine={{ stroke: "rgba(0,0,0,0.10)" }}
                 />
                 <YAxis
-                  tickFormatter={(v: number) => v.toLocaleString()}
+                  tickFormatter={(v: number) => nfInteger.format(v)}
                   tick={{ fill: "#6B7280", fontSize: 12 }}
                   axisLine={{ stroke: "rgba(0,0,0,0.10)" }}
                   tickLine={{ stroke: "rgba(0,0,0,0.10)" }}
@@ -183,19 +198,19 @@ export default function OverviewPage() {
                   cursor={{ fill: "rgba(0,0,0,0.05" }}
                   contentStyle={{
                     backgroundColor: "#FFFFFF",
-                    border: `1px solid ${"rgba(0,0,0,0.12)"}`,
+                    border: "1px solid rgba(0,0,0,0.12)",
                     borderRadius: 8,
                     color: "#111827",
                     boxShadow: "0 10px 20px rgba(0,0,0,.15)",
                   }}
                   itemStyle={{ color: "#111827" }}
                   labelStyle={{ color: "#111827", fontWeight: 600 }}
-                  formatter={(v: number) => [`${currency}${v.toLocaleString()}`, tooltipLabel]}
+                  formatter={(v: number) => [`${currencySymbol}${nfInteger.format(v)}`, tooltipLabel]}
                 />
                 <Bar
-                  dataKey={monthly?.keys?.y ?? "value"}
+                  dataKey={yKey}
                   fill="url(#barFill)"
-                  radius={barRadius as any}
+                  radius={barRadius} 
                   barSize={barSize}
                   animationDuration={600}
                 />
@@ -207,11 +222,11 @@ export default function OverviewPage() {
             <div className="text-gray-600 dark:text-gray-300">
               {totalLabel}:{" "}
               <span className="font-semibold">
-                {currency}{(monthly?.totalRevenue ?? 0).toLocaleString()}
+                {currencySymbol}{nfInteger.format(monthly.totalRevenue ?? 0)}
               </span>
             </div>
-            <div className={(monthly?.deltaPct ?? 0) >= 0 ? "text-emerald-600" : "text-amber-600"}>
-              {(monthly?.deltaPct ?? 0) >= 0 ? "↑" : "↓"} {Math.abs(monthly?.deltaPct ?? 0)}% {deltaNote}
+            <div className={(monthly.deltaPct ?? 0) >= 0 ? "text-emerald-600" : "text-amber-600"}>
+              {(monthly.deltaPct ?? 0) >= 0 ? "↑" : "↓"} {Math.abs(monthly.deltaPct ?? 0)}% {deltaNote}
             </div>
           </div>
         </div>

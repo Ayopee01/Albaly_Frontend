@@ -1,13 +1,12 @@
-/* ===== Shared display config ===== */
 export type DisplayConfig = {
-  currencySymbol?: string;          // "$" | "฿" | ...
-  deltaUpBg?: string;               // eg. "bg-emerald-50"
-  deltaUpText?: string;             // eg. "text-emerald-600"
-  deltaDownBg?: string;             // eg. "bg-amber-50"
-  deltaDownText?: string;           // eg. "text-amber-600"
+  currencySymbol?: string;
+  locale?: string;
+  deltaUpBg?: string;   
+  deltaUpText?: string;   
+  deltaDownBg?: string;  
+  deltaDownText?: string; 
 };
 
-/* ===== Overview ===== */
 export type KPIItem = {
   label: string;
   value: number;
@@ -16,31 +15,38 @@ export type KPIItem = {
   iconType?: "money" | "users" | "box";
 };
 
+export type ActivityStatus = "success" | "warning" | "danger";
+
 export type ActivityItem = {
   id: string | number;
   title: string;
   description: string;
   timeAgo: string;
-  status: "success" | "warning" | "danger";
+  status: ActivityStatus;
 };
+
+export type ChartPoint = Record<string, number | string>;
 
 export type OverviewMonthly = {
   title?: string;
   totalRevenue: number;
   deltaPct: number;
-  series: Array<Record<string, any>>;
-  keys?: { x: string; y: string }; // default {month,value}
+  series: ChartPoint[];
+  keys?: { x?: string; y?: string };
+
   labels?: {
     tooltipLabel?: string; // default "Revenue"
     totalLabel?: string;   // default "Total Revenue"
     deltaNote?: string;    // default "vs last period"
   };
+
   style?: {
     barGradient?: {
       lightFrom?: string; lightTo?: string;
       darkFrom?: string;  darkTo?: string;
     };
-    barRadius?: [number, number, number, number];
+
+    barRadius?: number | [number, number, number, number];
     barSize?: number;
   };
 };
@@ -50,7 +56,7 @@ export type OverviewResponse = {
   subtitle?: string;
   display?: DisplayConfig;
   kpis: KPIItem[];
-  kpiDeltaNote?: { good: string; bad: string };
+  kpiDeltaNote?: { good?: string; bad?: string };
   activityTitle?: string;
   activityStyle?: {
     successClass?: string;
@@ -58,11 +64,17 @@ export type OverviewResponse = {
     dangerClass?: string;
   };
   activity: ActivityItem[];
+
   monthly: OverviewMonthly;
 };
 
 /* ===== Insights ===== */
-export type BarDatum = { name: string; value: number; colorClass?: string };
+
+export type BarDatum = {
+  name: string;
+  value: number;
+  colorClass?: string;
+};
 
 export type TopSellingBlock = {
   title?: string;
@@ -72,12 +84,16 @@ export type TopSellingBlock = {
   style?: { barColorClass?: string; trackClass?: string; textClass?: string };
 };
 
-export type DropOffWeek = { week?: number; label?: string; churnRatePct: number };
+export type DropOffWeek = {
+  week?: number;
+  label?: string;
+  churnRatePct: number;
+};
 
 export type CustomerDropOffBlock = {
   title?: string;
   note?: string;
-  deltaPct: number; // + คือดีขึ้น/- แย่ลง ให้ backend ตีความเอง
+  deltaPct: number;
   weeks: DropOffWeek[];
   style?: {
     highlightWeekIndex?: number;
@@ -86,7 +102,11 @@ export type CustomerDropOffBlock = {
   };
 };
 
-export type RegionDatum = { region: string; value: number; colorClass?: string };
+export type RegionDatum = {
+  region: string;
+  value: number;
+  colorClass?: string;
+};
 
 export type RegionalPerformanceBlock = {
   title?: string;
@@ -109,6 +129,7 @@ export type FunnelStep = {
   currentClass?: string;
   prevClass?: string;
 };
+
 export type ConversionFunnelBlock = {
   title?: string;
   note?: string;
