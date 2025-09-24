@@ -81,7 +81,7 @@ export type TopSellingBlock = {
   note?: string;
   deltaPct: number;
   products: BarDatum[];
-  style?: { barColorClass?: string; trackClass?: string; textClass?: string };
+  style?: { barColorClass?: string; trackClass?: string; textClass?: string; fullAt?: number; };
 };
 
 export type DropOffWeek = {
@@ -119,6 +119,7 @@ export type RegionalPerformanceBlock = {
     barColorClass?: string;
     trackClass?: string;
     textClass?: string;
+    fullAt?: number;
   };
 };
 
@@ -141,6 +142,7 @@ export type ConversionFunnelBlock = {
     trackClass?: string;
     chipClass?: string;
     valueTextClass?: string;
+    fullAt?: number;
   };
 };
 

@@ -27,6 +27,7 @@ export async function GET() {
         { name: "Product B", value: 32180, colorClass: "bg-indigo-500" },
       ],
       style: {
+        fullAt: 50000,
         barColorClass: "bg-indigo-500",
         trackClass: "bg-slate-200",
         textClass: "text-slate-700",
@@ -62,6 +63,7 @@ export async function GET() {
       ],
       style: {
         highlightRegion: "APAC",
+        fullAt: 400000,
         highlightColorClass: "bg-emerald-500",
         barColorClass: "bg-indigo-500",
         trackClass: "bg-slate-200",
@@ -80,6 +82,7 @@ export async function GET() {
         { name: "PURCHASE", value: 1440 },
       ],
       style: {
+        fullAt: 15000,
         currentClass: "bg-indigo-500",
         prevClass: "bg-slate-300",
         trackClass: "bg-slate-200",

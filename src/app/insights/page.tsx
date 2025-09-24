@@ -48,7 +48,7 @@ function BarRow({
   trackClass?: string;
   textClass?: string;
 }) {
-  const pct = Math.max(2, Math.min(100, (value / (max || 1)) * 100));
+  const pct = Math.min(100, (value / (max || 1)) * 100);
   return (
     <div className="mb-4">
       <div className="flex items-center justify-between text-sm">
@@ -82,7 +82,7 @@ function FunnelRow({
   chipClass?: string;
   valueTextClass?: string;
 }) {
-  const currentPct = Math.max(3, Math.min(100, (step.value / (max || 1)) * 100));
+  const currentPct = Math.min(100, (step.value / (max || 1)) * 100);
   const prevPct = Math.max(
     0,
     Math.min(100, (Math.max(step.prev ?? 0, step.value) / (max || 1)) * 100),
@@ -135,7 +135,7 @@ export default function InsightsPage() {
 
   /* ----- Top-Selling ----- */
   const ts = data.topSelling;
-  const tsMax = Math.max(...(ts?.products ?? []).map((p) => p.value), 1);
+  const tsMax = ts?.style?.fullAt ?? Math.max(...(ts?.products ?? []).map(p => p.value), 1);
   const currency = data.display?.currencySymbol ?? "$";
   const tsBarColor = ts?.style?.barColorClass ?? "bg-indigo-500";
   const tsTrack = ts?.style?.trackClass ?? "bg-slate-200";
@@ -157,7 +157,7 @@ export default function InsightsPage() {
 
   /* ----- Regional Performance ----- */
   const rp = data.regionalPerformance;
-  const rpMax = Math.max(...(rp?.regions ?? []).map((r) => r.value), 1);
+  const rpMax = rp?.style?.fullAt ?? Math.max(...(rp?.regions ?? []).map(r => r.value), 1);
   const rpTitle = rp?.title ?? "Regional Performance";
   const rpNote = rp?.note ?? "";
   const rpBarColorDefault = rp?.style?.barColorClass ?? "bg-indigo-500";
@@ -168,10 +168,7 @@ export default function InsightsPage() {
   const cf = data.conversionFunnel;
   const cfTitle = cf?.title ?? "Conversion Funnel";
   const cfNote = cf?.note ?? "";
-  const funnelMax = Math.max(
-    ...(cf?.steps ?? []).map((s) => Math.max(s.prev ?? 0, s.value)),
-    1,
-  );
+  const funnelMax = cf?.style?.fullAt ?? Math.max(...(cf?.steps ?? []).map(s => Math.max(s.prev ?? 0, s.value)), 1);
   const cfStyle = cf?.style ?? {};
   const cfCurrent = cfStyle.currentClass ?? "bg-indigo-500";
   const cfPrev = cfStyle.prevClass ?? "bg-slate-300";
@@ -240,9 +237,8 @@ export default function InsightsPage() {
             {cdWeeks.map((w, i) => (
               <li key={i} className="flex items-center gap-3">
                 <span
-                  className={`h-2.5 w-2.5 rounded-full ${
-                    i === cdRoseIndex ? cdDotHighlight : cdDotNormal
-                  }`}
+                  className={`h-2.5 w-2.5 rounded-full ${i === cdRoseIndex ? cdDotHighlight : cdDotNormal
+                    }`}
                 />
                 <span className="text-slate-700 dark:text-slate-200">
                   {(w.label ?? `Week ${w.week}`)}: {w.churnRatePct}%
